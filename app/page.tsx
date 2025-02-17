@@ -19,7 +19,7 @@ export default function Home() {
       const baseUrl = process.env.NEXT_PUBLIC_URL || "http://localhost:3000";
 
       setShortenUrl(`${baseUrl}/${shorten.data.id}`);
-    } catch (err) {
+    } catch { 
       setError("Failed to generate short URL. Try again.");
     } finally {
       setLoading(false);
@@ -60,7 +60,7 @@ export default function Home() {
               {loading ? "..." : "Shorten"}
             </button>
           </div>
-          {error && <p className="text-red-500 mt-3 text-center">{error}</p>}
+          {error && <p className="text-red-500 mt-2">{error}</p>}
           {shortenUrl && (
             <div className="mt-4 p-3 bg-gray-100 rounded-lg flex justify-between items-center">
               <a
