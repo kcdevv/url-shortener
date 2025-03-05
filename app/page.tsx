@@ -1,12 +1,15 @@
 "use client";
 import axios from "axios";
 import { useState } from "react";
+import { toast } from "react-hot-toast";
 
 export default function Home() {
   const [link, setLink] = useState("");
+  const [customAlias, setCustomAlias] = useState("");
   const [shortenUrl, setShortenUrl] = useState<null | string>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("normal");
 
   const generateUrl = async () => {
     if (!link.trim()) return;
@@ -15,9 +18,12 @@ export default function Home() {
     setError(null);
     
     try {
-      const shorten = await axios.post("/api/generate", { url: link });
+      const payload: { url: string; alias?: string } = { url: link };
+      if (activeTab === "custom" && customAlias.trim()) {
+        payload.alias = customAlias;
+      }
+      const shorten = await axios.post("/api/generate", payload);
       const baseUrl = process.env.NEXT_PUBLIC_URL || "http://localhost:3000";
-
       setShortenUrl(`${baseUrl}/${shorten.data.id}`);
     } catch { 
       setError("Failed to generate short URL. Try again.");
@@ -29,7 +35,10 @@ export default function Home() {
   const copyToClipboard = async () => {
     if (shortenUrl) {
       await navigator.clipboard.writeText(shortenUrl);
-      alert("Copied to clipboard!");
+      toast.success("Copied to clipboard!", {
+        position: "top-right",
+        duration: 3000,
+      });
     }
   };
 
@@ -40,11 +49,26 @@ export default function Home() {
       </header>
       <div className="flex flex-1 items-center justify-center p-6">
         <div className="w-full max-w-lg p-8 bg-white rounded-3xl shadow-xl border border-gray-200">
+          <div className="flex justify-center space-x-4 mb-6">
+            <button 
+              className={`px-4 py-2 font-medium rounded-lg transition ${activeTab === "normal" ? "bg-orange-500 text-white" : "bg-gray-200"}`}
+              onClick={() => setActiveTab("normal")}
+            >
+              Normal
+            </button>
+            <button 
+              className={`px-4 py-2 font-medium rounded-lg transition ${activeTab === "custom" ? "bg-orange-500 text-white" : "bg-gray-200"}`}
+              onClick={() => setActiveTab("custom")}
+            >
+              Custom
+            </button>
+          </div>
+
           <h2 className="text-2xl font-semibold text-center mb-4">
-            Shorten your long URLs
+            {activeTab === "normal" ? "Shorten your long URLs" : "Create a Custom Short URL"}
           </h2>
 
-          <div className="flex space-x-2">
+          <div className="flex flex-col space-y-3">
             <input
               onChange={(e) => setLink(e.target.value)}
               value={link}
@@ -52,6 +76,15 @@ export default function Home() {
               placeholder="Enter your URL..."
               className="w-full p-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
             />
+            {activeTab === "custom" && (
+              <input
+                onChange={(e) => setCustomAlias(e.target.value)}
+                value={customAlias}
+                type="text"
+                placeholder="Enter custom alias (optional)"
+                className="w-full p-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+              />
+            )}
             <button
               className="px-5 py-3 bg-orange-500 text-white font-medium rounded-lg shadow-md hover:bg-orange-600 transition disabled:opacity-50"
               onClick={generateUrl}
